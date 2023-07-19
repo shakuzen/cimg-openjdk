@@ -6,15 +6,18 @@
 # specific reason to use a different one. This means January, April, July, or
 # October.
 
-FROM cimg/base:2023.04
+FROM cimg/base:2023.07
 
 LABEL maintainer="Community & Partner Engineering Team <community-partner@circleci.com>"
 
 ENV JAVA_VERSION 11.0.19
-ENV URL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19%2B7/OpenJDK11U-jdk_x64_linux_hotspot_11.0.19_7.tar.gz
 ENV JAVA_HOME /usr/local/jdk-${JAVA_VERSION}
 
-RUN curl -sSL -o java.tar.gz "${URL}" && \
+RUN [[ $(uname -m) == "x86_64" ]] && ARCH="x64" || ARCH="aarch64" && \
+	JAVA_MAJOR_VERSION=$(echo "$JAVA_VERSION" | cut -d '.' -f 1) && \
+	JAVA_BUILD=$(curl -s "https://api.github.com/repos/adoptium/temurin${JAVA_MAJOR_VERSION}-binaries/releases" | jq ".[] | select(.tag_name | startswith(\"jdk-${JAVA_VERSION}+\")) | .tag_name | split(\"+\")[1]" | tr -d '"') && \
+	URL="https://github.com/adoptium/temurin${JAVA_MAJOR_VERSION}-binaries/releases/download/jdk-${JAVA_VERSION}%2B${JAVA_BUILD}/OpenJDK${JAVA_MAJOR_VERSION}U-jdk_${ARCH}_linux_hotspot_${JAVA_VERSION}_${JAVA_BUILD}.tar.gz" && \
+	curl -sSL -o java.tar.gz "${URL}" && \
 	sudo mkdir /usr/local/jdk-${JAVA_VERSION} && \
 	sudo tar -xzf java.tar.gz --strip-components=1 -C /usr/local/jdk-${JAVA_VERSION} && \
 	rm java.tar.gz && \
@@ -33,7 +36,7 @@ RUN curl -sSL -o java.tar.gz "${URL}" && \
 	java --version || java -version && \
 	javac --version || javac -version
 
-ENV MAVEN_VERSION=3.9.1 \
+ENV MAVEN_VERSION=3.9.3 \
 	PATH=/opt/apache-maven/bin:$PATH
 RUN dl_URL="https://www.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" && \
 	curl -sSL --fail --retry 3 $dl_URL -o apache-maven.tar.gz && \
