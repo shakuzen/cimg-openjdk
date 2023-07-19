@@ -14,7 +14,8 @@ ENV JAVA_VERSION 20.0.1
 ENV JAVA_HOME /usr/local/jdk-${JAVA_VERSION}
 
 RUN [[ $(uname -m) == "x86_64" ]] && ARCH="x64" || ARCH="aarch64" && \
-	JAVA_BUILD = $(curl -s "https://api.github.com/repos/adoptium/temurin${VERSION_MAJOR}-binaries/releases" | jq '.[] | select(.tag_name | startswith("jdk-${JAVA_VERSION}}+")) | .tag_name | split("+")[1]') && \
+	JAVA_MAJOR_VERSION=$(echo "$JAVA_VERSION" | cut -d '.' -f 1) && \
+	JAVA_BUILD = $(curl -s "https://api.github.com/repos/adoptium/temurin${JAVA_MAJOR_VERSION}-binaries/releases" | jq '.[] | select(.tag_name | startswith("jdk-${JAVA_VERSION}}+")) | .tag_name | split("+")[1]') && \
 	URL = "https://github.com/adoptium/temurin${VERSION_MAJOR}-binaries/releases/download/jdk-${JAVA_VERSION}%2B${JAVA_BUILD}/OpenJDK16U-jdk_${ARCH}_linux_hotspot_{JAVA_VERSION}_${JAVA_BUILD}.tar.gz" && \
 	curl -sSL -o java.tar.gz "${URL}" && \
 	sudo mkdir /usr/local/jdk-${JAVA_VERSION} && \
